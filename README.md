@@ -1,14 +1,5 @@
-# repl-mesos
-
-A Clojure library designed to ... well, that part is up to you.
-
-## Usage
-
-FIXME
+# REPL-MESOS
 
 ## License
 
-Copyright © 2014 FIXME
-
-Distributed under the Eclipse Public License either version 1.0 or (at
-your option) any later version.
+Copyright 2014 Edward Paget and Alex Weiksnar. Licensed under the [APGLv3](https://www.gnu.org/licenses/agpl-3.0.html). See LICENSE
