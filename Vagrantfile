@@ -28,6 +28,10 @@ $script = <<SCRIPT
 
  echo "Starting mesos slave"
  start mesos-slave
+
+ echo "Installing Leiningen"
+ wget https://raw.githubusercontent.com/technomancy/leiningen/stable/bin/lein -O /usr/local/bin/lein
+ chmod a+x /usr/local/bin/lein
 SCRIPT
 
 
