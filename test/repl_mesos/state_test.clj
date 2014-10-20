@@ -2,7 +2,6 @@
   (:require [clojure.test :refer :all]
             [repl-mesos.state :refer :all]))
 
-
 (deftest update-one-test
   (let [test-state (create-state :memory)]
     (testing "Writes to MesosState with the given key"

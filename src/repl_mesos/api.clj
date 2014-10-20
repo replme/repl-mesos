@@ -2,6 +2,7 @@
   (:require [repl-mesos.state :refer [get-all get-one update-one delete-one]]
             [com.stuartsierra.component :as component]
             [liberator.core :refer [resource]]
+            [liberator.dev :refer [wrap-trace]]
             [io.clojure.liberator-transit]
             [ring.middleware.transit :refer [wrap-transit-body]]
             [org.httpkit.server :refer [run-server]]
@@ -19,7 +20,7 @@
               (when (update-one state id data)
                 {::entry data})))
    :handle-created #(::entry %)
-   :handle-ok #(get-all state)))
+   :handle-ok (fn [ctx] (get-all state))))
 
 (defn repl
   [state id]
@@ -31,10 +32,12 @@
 
 (defn router
   [state]
+  (println state)
   (-> (routes
        (ANY "/repls" [] (repls state))
-       (ANY "/repls/:id" [id] (repls id)))
-      (wrap-transit-body)))
+       (ANY "/repls/:id" [id] (repl state id)))
+      (wrap-transit-body)
+      (wrap-trace :header :ui)))
 
 (defn start-server
   [port {:keys [store]}]
