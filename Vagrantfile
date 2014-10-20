@@ -53,6 +53,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Forward mesos ports.
   config.vm.network "forwarded_port", guest: 5050, host: 5050
   config.vm.network "forwarded_port", guest: 5051, host: 5051
+  config.vm.network "forwarded_port", guest: 8081, host: 8081
+  config.vm.network "forwarded_port", guest: 4343, host: 4343 
 
   # Provision the system.
   config.vm.provision "shell", inline: $script
