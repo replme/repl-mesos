@@ -1,42 +1,66 @@
 (ns repl-mesos.state
-  (:require [com.stuartsierra.component :as component])
-  (:import [org.apache.mesos.state Variable State InMemoryState]))
+  (:require [com.stuartsierra.component :as component]
+            [cognitect.transit :as transit])
+  (:import [org.apache.mesos.state Variable State InMemoryState]
+           [java.io ByteArrayInputStream ByteArrayOutputStream]))
 
 (defn create-state
   [type & [config]]
   (condp = type
     :memory (InMemoryState.)))
 
-(defn fetch
+(defn- fetch
   [^State state name]
   (.fetch state name))
 
-(defn write
+(defn- write
   [^State state ^Variable var]
   (.store state var))
 
-(defn expunge
+(defn- expunge
   [^State state ^Variable var]
   (.expunge state var))
 
-(defn names
+(defn- names
   [^State state]
   (.names state))
 
-(defn value
+(defn- value
   [^Variable var]
   (.value var))
 
-(defn mutate!
-  [^Variable var #^bytes data])
+(defn- mutate!
+  [^Variable var #^bytes data]
+  (.mutate var data))
+
+(defn- var->clj
+  [^Variable var]
+  (-> (value var)
+      (ByteArrayInputStream.)
+      (transit/read :msgpack)))
 
 (defn get-all
   [state]
-  (map fetch (names state)))
+  (->> (names state)
+       (map fetch)
+       (map var->clj)))
 
 (defn get-one
   [state name]
-  (fetch state name))
+  (var->clj (fetch state name)))
+
+(defn update-var
+  [state name data]
+  (let [var (fetch state name)
+        out (ByteArrayOutputStream. 4096)
+        writer (transit/writer out :msgpack)]
+    (->> (.toByteArray (transit/write writer data))
+         (mutate! var)
+         (write state))))
+
+(defn delete
+  [state name]
+  (expunge (fetch state name)))
 
 (defrecord MesosState [type config store]
   component/Lifecycle

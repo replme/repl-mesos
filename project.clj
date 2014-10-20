@@ -9,6 +9,7 @@
                  [http-kit "2.1.18"]
                  [liberator "0.12.0"]
                  [compojure "1.1.3"]
+                 [ring-transit "0.1.2"]
                  [io.clojure/liberator-transit "0.3.0"]
                  [org.clojure/core.async "0.1.346.0-17112a-alpha"]]
   :profiles
