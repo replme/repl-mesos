@@ -19,48 +19,50 @@
 
 (defn- expunge
   [^State state ^Variable var]
-  (.expunge state var))
+  (.expunge state @var))
 
 (defn- names
   [^State state]
-  (.names state))
+  (iterator-seq (deref (.names state))))
 
 (defn- value
   [^Variable var]
-  (.value var))
+  (.value @var))
 
 (defn- mutate!
   [^Variable var #^bytes data]
-  (.mutate var data))
+  (.mutate @var data))
 
 (defn- var->clj
   [^Variable var]
   (-> (value var)
       (ByteArrayInputStream.)
-      (transit/read :msgpack)))
+      (transit/reader :msgpack)
+      (transit/read)))
 
 (defn get-all
   [state]
   (->> (names state)
-       (map fetch)
+       (map #(fetch state %))
        (map var->clj)))
 
 (defn get-one
   [state name]
   (var->clj (fetch state name)))
 
-(defn update-var
+(defn update-one
   [state name data]
   (let [var (fetch state name)
         out (ByteArrayOutputStream. 4096)
         writer (transit/writer out :msgpack)]
-    (->> (.toByteArray (transit/write writer data))
+    (transit/write writer data)
+    (->> (.toByteArray out)
          (mutate! var)
          (write state))))
 
-(defn delete
+(defn delete-one
   [state name]
-  (expunge (fetch state name)))
+  (expunge state (fetch state name)))
 
 (defrecord MesosState [type config store]
   component/Lifecycle
