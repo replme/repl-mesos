@@ -25,29 +25,31 @@
         :else [false {:message "Unspported Content-Type"}]))
     true))
 
-(defn repls
-  [state]
-  (resource
-   :allowed-methods [:get :post]
-   :available-media-types ["application/transit+msgpack"
+(def resource-defaults
+  {:available-media-types ["application/transit+msgpack"
                            "application/transit+json"]
    :known-content-type? (fn [ctx] (check-content ctx ::content))
-   :processable? (fn [ctx] (parse-body ctx ::data))
-   :post! (fn [ctx]
-            (let [id (java.util.UUID/randomUUID)
-                  data (assoc (::data ctx) :id id :status "creating")]
-              (when (update-one state (str id) data)
-                {::entry data})))
-   :handle-created ::entry
-   :handle-ok (fn [ctx] (get-all state))))
+   :processable? (fn [ctx] (parse-body ctx ::data))})
+
+(defn repls
+  [state]
+  (resource resource-defaults
+            :allowed-methods [:get :post]
+            :post! (fn [ctx]
+                     (let [id (java.util.UUID/randomUUID)
+                           data (assoc (::data ctx) :id id :status "creating")]
+                       (when (update-one state (str id) data)
+                         {::entry data})))
+            :handle-created ::entry
+            :handle-ok (fn [ctx] (get-all state))))
 
 (defn repl
   [state id]
-  (resource
-   :allowed-method [:get :put :delete]
-   :available-media-types ["application/transit+msgpack"
-                           "application/transit+json"]
-   :handle-ok "Happ BIRTHDAY"))
+  (resource resource-defaults
+            :allowed-method [:get :put :delete]
+            :available-media-types ["application/transit+msgpack"
+                                    "application/transit+json"]
+            :handle-ok "Happ BIRTHDAY"))
 
 (defn router
   [state]

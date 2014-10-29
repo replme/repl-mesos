@@ -52,7 +52,7 @@
 
 (defn update-one
   [state name data]
-  let [var (fetch state name)
+  (let [var (fetch state name)
         out (ByteArrayOutputStream. 4096)
         writer (transit/writer out :msgpack)]
     (transit/write writer data)
