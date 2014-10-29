@@ -37,3 +37,15 @@
       (is (= java.util.UUID (type (:id response-body)))))
     (testing "response body should have creating status"
       (is (= "creating" (:status response-body))))))
+
+(deftest get-col-test
+  (let [handler (test-router)
+        response (handler (request :get "/repls"))
+        response-body (get-transit (:body response))]
+    (testing "response status is ok"
+      (is (= 200 (:status response))))
+    (testing "response body contains a uuid id for each entry"
+      (doseq [resource response-body]
+        (is (= java.util.UUID (type (:id resource))))))
+    (testing "response body is a vector"
+      (is (vector? response-body)))))

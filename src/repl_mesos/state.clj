@@ -44,7 +44,7 @@
   [state]
   (->> (names state)
        (map #(fetch state %))
-       (map var->clj)))
+       (mapv var->clj)))
 
 (defn get-one
   [state name]

@@ -11,9 +11,11 @@
 
 (defn parse-body
   [ctx key]
-  {key (-> (get-in ctx [:request :body])
-           (transit/reader (::content ctx))
-           (transit/read))})
+  (if-let [content (::content ctx)]
+    {key (-> (get-in ctx [:request :body])
+             (transit/reader content)
+             (transit/read))}
+    true))
 
 (defn check-content
   [ctx key]
@@ -49,7 +51,18 @@
             :allowed-method [:get :put :delete]
             :available-media-types ["application/transit+msgpack"
                                     "application/transit+json"]
-            :handle-ok "Happ BIRTHDAY"))
+            :exists? (fn [_]
+                       (if-let [entry (get-one state id)]
+                         {::entry entry}))
+            :put! (fn [ctx]
+                    (let [data (select-keys (::data ctx) [:repo])
+                          entry (merge (get-one state id) data)]
+                      (when (update-one state id entry)
+                        {::entry entry})))
+            :can-put-to-missing? false
+            :delete! (fn [ctx] (delete-one state id))
+            :handle-no-content ""
+            :handle-ok ""))
 
 (defn router
   [state]
