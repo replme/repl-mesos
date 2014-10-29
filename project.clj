@@ -15,5 +15,6 @@
   :profiles
   {:dev {:source-paths ["dev"]
          :dependencies [[org.clojure/tools.namespace "0.2.3"]
+                        [ring-mock "0.1.5"]
                         [cider/cider-nrepl "0.8.0-SNAPSHOT"]]}})
 

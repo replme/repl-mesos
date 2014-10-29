@@ -3,10 +3,27 @@
             [com.stuartsierra.component :as component]
             [liberator.core :refer [resource]]
             [liberator.dev :refer [wrap-trace]]
+            [cognitect.transit :as transit]
             [io.clojure.liberator-transit]
             [ring.middleware.transit :refer [wrap-transit-body]]
             [org.httpkit.server :refer [run-server]]
             [compojure.core :refer [routes ANY]]))
+
+(defn parse-body
+  [ctx key]
+  {key (-> (get-in ctx [:request :body])
+           (transit/reader (::content ctx))
+           (transit/read))})
+
+(defn check-content
+  [ctx key]
+  (if (#{:post :put} (get-in ctx [:request :request-method]))
+    (let [content (get-in ctx [:request :headers "content-type"])]
+      (condp = content
+        "application/transit+json" [true {key :json}]
+        "application/transit+msgpack" [true {key :msgpack}]
+        :else [false {:message "Unspported Content-Type"}]))
+    true))
 
 (defn repls
   [state]
@@ -14,12 +31,14 @@
    :allowed-methods [:get :post]
    :available-media-types ["application/transit+msgpack"
                            "application/transit+json"]
+   :known-content-type? (fn [ctx] (check-content ctx ::content))
+   :processable? (fn [ctx] (parse-body ctx ::data))
    :post! (fn [ctx]
             (let [id (java.util.UUID/randomUUID)
-                  data (assoc (get-in ctx [:request :body]) :id id)]
-              (when (update-one state id data)
+                  data (assoc (::data ctx) :id id :status "creating")]
+              (when (update-one state (str id) data)
                 {::entry data})))
-   :handle-created #(::entry %)
+   :handle-created ::entry
    :handle-ok (fn [ctx] (get-all state))))
 
 (defn repl
@@ -32,11 +51,9 @@
 
 (defn router
   [state]
-  (println state)
   (-> (routes
        (ANY "/repls" [] (repls state))
        (ANY "/repls/:id" [id] (repl state id)))
-      (wrap-transit-body)
       (wrap-trace :header :ui)))
 
 (defn start-server
